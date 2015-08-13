@@ -28,12 +28,10 @@ var playState = {
             this.addMobileInputs();
         }*/
 
-        var text1 = 'score: ' + this.game.global.score;
-        this.scoreLabel = this.game.add.text(0, 0,text1,{font: '25px Arial', fill:'#ff4040',align:'center'});
-        this.scoreLabel.anchor.setTo(0,0);
-        this.scoreLabel.fixedToCamera = 1;
-    },
 
+
+        
+    },
     generateSprite: function(size,x,y) {
         var circle = this.generateCircle1(this.color,size);
 
@@ -64,18 +62,17 @@ var playState = {
 
     generateEnemy: function(){
         this.enemies = this.game.add.group();
-        this.game.physics.arcade.enable(this.enemies);
+        //this.game.physics.arcade.enable(this.enemies);
         this.enemies.enableBody = true;
         for(var i = 0;i < 10; i++) {
             this.color = this.generateColor();
-            var mass = this.game.rnd.integerInRange(this.mass * 0.5,this.mass * 3);
-            var circle3 = this.generateCircle3(this.color, mass);
+            var circle3 = this.generateCircle3(this.color);
             this.enemy = this.enemies.create(this.game.world.randomX, this.game.world.randomY, circle3);
             this.enemy.anchor.setTo(0.5,0.5);
             this.enemy.color = this.color;
-            this.enemy.mass = mass;
         }
     },
+
 
      generateColor: function(){
         var color = ['#0000FF','#FF0000','#00FF00'];
@@ -107,8 +104,8 @@ var playState = {
         return circle2;
     },
 
-    generateCircle3: function(color, mass){
-        var bitmapSize3 = mass * 2;
+    generateCircle3: function(color){
+        var bitmapSize3 = this.game.rnd.integerInRange(this.mass*1,this.mass*10);
         var circle3 = this.game.add.bitmapData(bitmapSize3,bitmapSize3);
         //var randomValue = this.game.rnd.integerInRange(this.mass*0.6,this.mass*20);
         //var RV1 = randomValue;
@@ -116,7 +113,7 @@ var playState = {
         circle3.ctx.fillStyle = color;
         circle3.ctx.beginPath();
         //circle3.ctx.arc(RV1,RV1,RV1,0,Math.PI*2,true);
-        circle3.ctx.arc(bitmapSize3/2,bitmapSize3/2,bitmapSize3/2,0,Math.PI*2,true);
+        circle3.ctx.arc(bitmapSize3,bitmapSize3,bitmapSize3,0,Math.PI*2,true);
         circle3.ctx.closePath();
         circle3.ctx.fill();
         return circle3;
@@ -159,17 +156,13 @@ var playState = {
 
      update: function() {
          this.game.physics.arcade.overlap(this.player, this.particles, this.collisionParticle, null, this);
-         this.game.physics.arcade.overlap(this.player, this.enemies, this.collisionEnemy, null, this);
+         //this.game.physics.arcade.overlap(this.player, this.enemies, this.quitgame, null, this);
 
          this.color = this.generateColor();
          if(this.enemies.length < 10) this.addenemy();
          if(this.particles.length < 200) this.addparticle();
 
          this.movePlayerMouse();
-         this.moveEnemies();
-         this.moveParticles();
-
-         this.setGravity();
      },
 
     addparticle: function() {
@@ -180,23 +173,21 @@ var playState = {
     },
 
     addenemy: function() {
-        var mass = this.game.rnd.integerInRange(this.mass * 0.5,this.mass * 3);
-        var circle3 = this.generateCircle3(this.color, mass);
+        var circle3 = this.generateCircle3(this.color);
         this.enemy = this.enemies.create(this.game.world.randomX, this.game.world.randomY, circle3);
         this.enemy.anchor.setTo(0.5,0.5);
-        this.enemy.mass = mass;
     },
 
     collisionParticle: function(player,particle) {
         var mass = 20;
         if(particle.color == this.player.color) {
             this.game.global.score += 5;
-            this.scoreLabel.text =  'score: ' + this.game.global.score;
             mass = this.player.mass + 1;
         }
         else {
             mass = this.player.mass;
         }
+        console.log(this.player.mass,mass);
         this.particles.remove(particle);
         var x = this.player.x;
         var y = this.player.y;
@@ -204,31 +195,20 @@ var playState = {
         this.generateSprite(mass,x,y);
     },
 
-    collisionEnemy: function(player,enemy) {
-        mass = this.player.mass * 0.5;
-        if(mass < 20) mass = 20;
-        this.enemies.remove(enemy);
-        var x = this.player.x;
-        var y = this.player.y;
-        this.player.kill();
-        this.generateSprite(mass,x,y);
-    },
-
-    moveEnemies: function() {
-        for(var i = 0;i < this.enemies.length; i++) {
-            this.enemy = this.enemies.getAt(i);
-            this.enemy.body.velocity.x = 0;
-            this.enemy.body.velocity.y = 0;
-        }
-    },
-
-    moveParticles: function () {
-        for(var i = 0;i < this.particles.length; i++) {
-            this.particle = this.particles.getAt(i);
-            this.particle.body.velocity.x = 0;
-            this.particle.body.velocity.y = 0;
-        }
-    },
+      movePlayer: function(){
+          if(this.cursor.left.isDown){
+              this.player.body.velocity.x = -this.player.speed;
+          }else if(this.cursor.right.isDown){
+              this.player.body.velocity.x = this.player.speed;
+          }else if(this.cursor.up.isDown){
+            this.player.body.velocity.y = -this.player.speed;
+          }else if(this.cursor.down.isDown){
+             this.player.body.velocity.y = this.player.speed;
+          }else{
+              this.player.body.velocity.x=0;
+              this.player.body.velocity.y=0;
+          }
+      },
 
     movePlayerMouse: function() {
         var x = this.game.input.mousePointer.x + this.game.camera.x - this.player.x;
@@ -245,34 +225,6 @@ var playState = {
         }
         else {
             this.player.body.velocity.y = 0;
-        }
-    },
-
-    setGravity: function() {
-        for(var i = 0;i < this.enemies.length; i++) {
-            this.enemy = this.enemies.getAt(i);
-            var x = this.enemy.x - this.player.x;
-            var y = this.enemy.y - this.player.y;
-            var r = Math.sqrt(x * x + y * y);
-            if(r < 5 * this.enemy.mass) {
-                this.player.body.velocity.x += x * this.enemy.mass * 20000/ (r * r * r);
-                this.player.body.velocity.y += y * this.enemy.mass * 20000/ (r * r * r);
-            }
-            if(r < 5 * this.player.mass) {
-                this.enemy.body.velocity.x -= x * this.player.mass * 20000/ (r * r * r);
-                this.enemy.body.velocity.y -= y * this.player.mass  * 20000/ (r * r * r);
-            }
-        }
-
-        for(i = 0;i < this.particles.length; i++) {
-            this.particle = this.particles.getAt(i);
-            x = this.particle.x - this.player.x;
-            y = this.particle.y - this.player.y;
-            r = Math.sqrt(x * x + y * y);
-            if(r < 5 * this.player.mass) {
-                this.particle.body.velocity.x -= x * this.player.mass * 20000/ (r * r * r);
-                this.particle.body.velocity.y -= y * this.player.mass  * 20000/ (r * r * r);
-            }
         }
     },
 
